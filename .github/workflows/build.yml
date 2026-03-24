@@ -1,0 +1,51 @@
+name: Build BaiduPCS-Go
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        goos: [windows, linux]
+        goarch: [amd64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+
+      - name: Show Go version
+        run: go version
+
+      - name: Download dependencies
+        run: go mod tidy
+
+      - name: Build
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            export CGO_ENABLED=0
+            GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/BaiduPCS-Go-${{ matrix.goos }}-${{ matrix.goarch }}.exe
+          else
+            export CGO_ENABLED=0
+            GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/BaiduPCS-Go-${{ matrix.goos }}-${{ matrix.goarch }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BaiduPCS-Go-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+          retention-days: 7
